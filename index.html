@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>一个简单的五子棋实现方案</title>
+  <style>
+    body {
+      background: aquamarine;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 50px;
+    }
+
+    header #current {
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      background: black;
+      box-shadow: #999 3px 3px 3px;
+    }
+
+    header button {
+      box-shadow: #999 3px 3px 3px;
+      padding: 5px 10px;
+      background-color: darkred;
+      color: #fff;
+    }
+
+    table {
+      margin: 30px auto;
+      box-shadow: #999 3px 3px 3px;
+      background-color: bisque;
+    }
+
+    table tr td {
+      padding: 5px;
+      width: 20px;
+      height: 20px;
+      border-left: 1px solid #999;
+      border-bottom: 1px solid #999;
+    }
+
+    table tr td div {
+      border-radius: 50%;
+      width: 100%;
+      height: 100%;
+    }
+
+    table tr:first-child td {
+      border-top: 1px solid #999;
+    }
+
+    table tr td:last-child {
+      border-right: 1px solid #999;
+    }
+
+    .bg1,
+    .bg2 {
+      box-shadow: #999 3px 3px 3px;
+    }
+
+    .bg1 {
+      background-color: black !important;
+    }
+
+    .bg2 {
+      background: white !important;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div id="current"></div>
+    <div id="resultBoard"></div>
+    <button id="restart">重新开始</button>
+  </header>
+</body>
+<script>
+  var current = 1,
+    arr = [],
+    winner = 0,
+    size = 10,
+    table = document.createElement('table'),
+    resultBoard = document.getElementById('resultBoard'),
+    currentElement = document.getElementById('current'),
+    player = ['', '黑方', '白方']
+  pattern = ['', /1{5,}/g, /2{5,}/g];
+  table.cellPadding = 0;
+  table.cellSpacing = 0;
+  document.body.appendChild(table)
+  table.addEventListener('click', function (e) {
+    e = e || window.event;
+    var t = e.target || e.srcElement;
+    /* 在td里面加个div，是为了实现圆形棋子以及棋子的阴影 */
+    if (t.nodeName.toLowerCase() === 'div') {
+      render(t);
+    }
+    if (t.nodeName.toLowerCase() === 'td') {
+      render(t.querySelector('div'));
+    }
+  })
+
+  // 刷新棋盘
+  function render(ele) {
+    // 获取当前点击对象中储存的行和列信息，根据这些信息操作二维数组
+    var row = ele.getAttribute('data-row')
+    var column = ele.getAttribute('data-column')
+    // 如果当前点击的坐标值为0，证明该坐标尚未有棋子，winner为0表示尚未有胜利者，游戏正在进行中
+    if (arr[row][column] === 0 && winner === 0) {
+      // 找到数组中对应的坐标，并把当前棋手的标识添加到数组中(黑为1，白为2)
+      arr[row][column] = current
+      // 改变棋子颜色
+      ele.className = 'bg' + current
+      // 判断结果，如果有胜出方，result会返回true，如果暂时没有胜出方，则游戏继续
+      if (!result(row, column)) {
+        current = current === 1 ? 2 : 1;
+        // 改变当前颜色提示
+        currentElement.className = 'bg' + current;
+        // 改当前棋手提示文字
+        resultBoard.innerHTML = player[current] + '执棋'
+      };
+    }
+  }
+
+  function result(row, col) {
+    // 列结果字符串，因为行可以通过数组的join方法转为字符串，所以不需要用变量记录
+    var i, colResult = '',
+      line1Result = '', // 斜线1结果字符串
+      line2Result = '', // 斜线2结果字符串
+      x, y;
+    // 统计当前棋子所在行有没有连续的5个棋子，先转为字符串，再用正则匹配
+    // 如：[0,1,1,1,1,1,0,0,0,0] 转换为 '0111110000'
+    if (arr[row].join('').match(pattern[current])) {
+      return showWinner()
+    }
+
+    // 统计当前棋子所在列有没有连续的5个棋子，所在列的算法，就是保持列下标不变，遍历每一行
+    for (i = 0; i < size; i++) {
+      colResult += '' + arr[i][col]
+    }
+    if (colResult.match(pattern[current])) {
+      return showWinner()
+    }
+
+    // 统计左下到右上斜线上有没有连续的5个棋子，先获取起始坐标x，超出数组边界则取边界值
+    // 再根据起始x坐标计算出起始y坐标
+    // 然后x由高到低，y由低到高递增，超出数组边界则停止循环
+    x = Math.min(+row + +col, size - 1)
+    y = col - (x - row)
+    while (x >= 0 && y < size) {
+      line1Result += '' + arr[x][y]
+      x--;
+      y++;
+    }
+    if (line1Result.match(pattern[current])) {
+      return showWinner()
+    }
+
+    // 统计左上到右下斜线上有没有连续的5个棋子
+    // 左上到右下的起始坐标获取较简单，x坐标取 row - col 的值，y坐标取 col - row 的值
+    // 如果x、y为负数，则取 0
+    x = Math.max(row - col, 0)
+    y = Math.max(col - row, 0)
+    while (x < size && y < size) {
+      line2Result += '' + arr[x][y]
+      x++;
+      y++;
+    }
+
+    if (line2Result.match(pattern[current])) {
+      return showWinner()
+    }
+  }
+
+  // 显示结果
+  function showWinner() {
+    winner = current;
+    resultBoard.innerHTML = player[winner] + '获胜';
+    return true;
+  }
+
+  // 开始，或重置游戏
+  function start() {
+    current = 1;
+    winner = 0;
+    arr = [];
+    table.innerHTML = '';
+    resultBoard.innerHTML = '';
+    currentElement.className = 'bg1';
+    resultBoard.innerHTML = player[current] + '执棋'
+    for (var i = 0; i < size; i++) {
+      arr[i] = []
+      var tr = document.createElement('tr')
+      table.appendChild(tr)
+      for (var j = 0; j < size; j++) {
+        var td = document.createElement('td'),
+          div = document.createElement('div');
+        div.setAttribute('data-row', i);
+        div.setAttribute('data-column', j);
+        td.appendChild(div);
+        tr.appendChild(td);
+        arr[i].push(0)
+      }
+    }
+  }
+
+  start();
+
+  document.getElementById('restart').onclick = function () {
+    start();
+  }
+</script>
+
+</html>
