@@ -2,7 +2,7 @@
 
 同事说想开发一个五子棋游戏，按照自己想法做了一个给他们参考，思路是自己想的，算法可能并不科学，仅供参考，不喜勿喷！
 
-查看效果：[https://jannyho.github.io/Gobang/](https://jannyho.github.io/Gobang/)
+查看效果：[https://chenfeng-github.github.io/Gobang/](https://jannyho.github.io/Gobang/)
 
 思路（这里只帖关键代码，创建DOM、CSS等这些基础技术请自行查看源码）：
 
